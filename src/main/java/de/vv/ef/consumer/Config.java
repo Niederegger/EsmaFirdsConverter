@@ -19,4 +19,12 @@ public class Config {
 
 	// path of Storage
 	public String Path = "";
+	
+	public String[][] mappings = {
+			{"AsstClssSpcfcAttrbts","ACSA"},
+			{"OthrLegIntrstRate","OLIR"},
+			{"DerivInstrmAttrbts","DIA"},
+			{"Cmmdty","C"},
+			{"Pdct","P"},
+	};
 }

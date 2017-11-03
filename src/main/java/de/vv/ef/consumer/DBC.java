@@ -11,7 +11,10 @@ import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
 public class DBC {
 	final static Logger logger = LoggerFactory.getLogger(DBC.class);
-
+	
+	private final static int batchSize = 1000;
+	private static int count = 0;
+	
 	static Connection con;
 	static SQLServerDataSource ds;
 	static PreparedStatement psi = null; // insert
@@ -34,6 +37,7 @@ public class DBC {
 			ds.setPortNumber(EFA.c.port);
 			ds.setDatabaseName(EFA.c.dbName);
 			con = ds.getConnection();
+			con.setAutoCommit(false);
 			psi = con.prepareStatement(queryI);
 			psu = con.prepareStatement(queryU);
 		} catch (SQLException e) {
@@ -69,13 +73,8 @@ public class DBC {
 	 * @param d
 	 */
 	private static void executeQuery(String isin, String mic, L2M d) {
-		try {
 			for (int i = 0; i < d.fns.size(); i++)
 				executeQuery(isin, mic, d.fns.get(i), d.svs.get(i));
-		} catch (SQLException e) {
-			logger.error("SQLException: {}", e.getMessage());
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -86,18 +85,35 @@ public class DBC {
 	 * @param sv
 	 * @throws SQLException
 	 */
-	private static void executeQuery(String isin, String mic, String fn, String sv) throws SQLException {
-		int stmtCount = 1;
-		String wMic = fn.contains("TradgVnRltdAttrbts") ? mic : "";
-		psi.setString(stmtCount++, EFA.c.daor); // DataOrigin
-		psi.setString(stmtCount++, EFA.srcf); // SourceFile
-		psi.setString(stmtCount++, EFA.c.srid); // entries.sourceId);
-		psi.setString(stmtCount++, isin); // ISIN
-		psi.setString(stmtCount++, wMic); // entry.MIC);
-		psi.setString(stmtCount++, fn); // FieldName
-		psi.setString(stmtCount++, sv); // StringValue
-		psi.setString(stmtCount++, EFA.c.cmmt); // entries.comment);
-		psi.executeUpdate();
+	private static void executeQuery(String isin, String mic, String fn, String sv) {
+		try {
+			int stmtCount = 1;
+			String wMic = fn.contains("TradgVnRltdAttrbts") ? mic : "";
+			psi.setString(stmtCount++, EFA.c.daor); // DataOrigin
+			psi.setString(stmtCount++, EFA.srcf); // SourceFile
+			psi.setString(stmtCount++, EFA.c.srid); // entries.sourceId);
+			psi.setString(stmtCount++, isin); // ISIN
+			psi.setString(stmtCount++, wMic); // entry.MIC);
+			psi.setString(stmtCount++, fn); // FieldName
+			psi.setString(stmtCount++, sv); // StringValue
+			psi.setString(stmtCount++, EFA.c.cmmt); // entries.comment);
+			psi.addBatch();
+			execBatch(false);
+		} catch (SQLException e) {
+			logger.error("SQLException: {}, isin: {}, mic: {}, fn: {}, sv: {}", e.getMessage(), isin,mic,fn,sv);
+		}
+	}
+	
+	public static void execBatch(boolean force){
+		if(++count % batchSize == 0 || force) {
+			try {
+				psi.executeBatch();
+				con.commit();
+			} catch (SQLException e) {
+				logger.error("SQLException: {}", e.getMessage());
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**
@@ -105,6 +121,7 @@ public class DBC {
 	 */
 	public static void executeUpdate() {
 		int stmtCount = 1;
+		execBatch(true);
 		try {
 			psu.setString(stmtCount++, EFA.c.srid); // SourceId
 			psu.setString(stmtCount++, EFA.c.daor); // Data Origin
@@ -112,6 +129,7 @@ public class DBC {
 			psu.setString(stmtCount++, EFA.srcf); // Filename
 			psu.setString(stmtCount++, EFA.c.cmmt); // Comment
 			psu.executeUpdate();
+			con.commit();
 		} catch (SQLException e) {
 			logger.error("SQLException: {}", e.getMessage());
 			e.printStackTrace();

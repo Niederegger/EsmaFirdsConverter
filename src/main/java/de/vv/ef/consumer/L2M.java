@@ -23,7 +23,13 @@ public class L2M {
 	 */
 	public void append(String fn, String sv){
 		if(sv==null||sv.equals("")) return;
-		fns.add(trimString(fn));svs.add(trimString(sv));
+		fns.add(mappings(fn));svs.add(trimString(sv));
+	}
+
+	private String mappings(String fn) {
+		for(String[] sar : EFA.c.mappings)
+			if(fn.contains(sar[0]))fn=fn.replace(sar[0], sar[1]);
+		return trimString(fn);
 	}
 	
 	/**
