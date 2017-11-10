@@ -26,6 +26,11 @@ public class L2M {
 		fns.add(mappings(fn));svs.add(trimString(sv));
 	}
 
+	/**
+	 * Mappt Die Fieldnames in Kürze Namen
+	 * @param fn
+	 * @return
+	 */
 	private String mappings(String fn) {
 		for(String[] sar : EFA.c.mappings)
 			if(fn.contains(sar[0]))fn=fn.replace(sar[0], sar[1]);

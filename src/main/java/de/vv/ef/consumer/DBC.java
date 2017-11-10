@@ -88,7 +88,7 @@ public class DBC {
 	private static void executeQuery(String isin, String mic, String fn, String sv) {
 		try {
 			int stmtCount = 1;
-			String wMic = fn.contains("TradgVnRltdAttrbts") ? mic : "";
+			String wMic = fn.contains("TradgVnRltdAttrbts") || fn.contains("FinInstrmGnlAttrbts") ? mic : "";
 			psi.setString(stmtCount++, EFA.c.daor); // DataOrigin
 			psi.setString(stmtCount++, EFA.srcf); // SourceFile
 			psi.setString(stmtCount++, EFA.c.srid); // entries.sourceId);
